@@ -1,0 +1,22 @@
+# ตัวแปรระบบและรหัสผ่าน (ห้ามลืมตรงนี้เด็ดขาด)
+.env
+
+#myenv
+myenv/
+venv/
+env/
+
+#Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+#ฐานข้อมูล SQLite
+db.sqlite3
+
+#ไฟล์ขยะของระบบปฏิบัติการ
+.DS_Store
+Thumbs.db
+
+#โฟลเดอร์เก็บรูปภาพหรือไฟล์ที่ User อัปโหลด
+media/
