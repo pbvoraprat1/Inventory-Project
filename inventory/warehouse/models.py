@@ -15,7 +15,7 @@ class Product(models.Model):
     id  = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sku = models.CharField(max_length=100, unique=True,db_index=True)
     name = models.CharField(max_length=255)
-    catagory_id = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     base_price = models.DecimalField(max_digits=10, decimal_places=2)
     reorder_level = models.IntegerField(default=10)
     is_active = models.BooleanField(default=True)
@@ -36,13 +36,13 @@ class Warehouse(models.Model):
     
 #Stock balance model(ยอดคงเหลือสินค้าในคลัง)
 class StockBalance(models.Model):
-    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stock_balances')
-    Warehouse_id = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='stock_balances')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stock_balances')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='stock_balances')
     quantity = models.IntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('product_id', 'Warehouse_id')
+        unique_together = ('product', 'warehouse')
 
 #Stocktransaction model(การเคลื่อนไหวของสินค้าในคลัง)
 class StockTransaction(models.Model):
@@ -50,8 +50,8 @@ class StockTransaction(models.Model):
         IN = 'IN', 'Stock In'       #(รับสินค้าเข้าคลัง)
         OUT = 'OUT', 'Stock Out'    #(เบิกสินค้า)
         ADJ = 'ADJ', 'Adjust'       #(ปรับยอดคงเหลือ)
-    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stock_transactions')
-    Warehouse_id = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='stock_transactions')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stock_transactions')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='stock_transactions')
     transactions_id = models.CharField(max_length=100, unique=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     transaction_type = models.CharField(max_length=3, choices=TransactionType.choices)
