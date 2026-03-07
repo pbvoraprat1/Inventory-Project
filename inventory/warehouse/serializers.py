@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Warehouse, StockBalance, StockTransaction
+from .models import Warehouse, StockBalance, StockTransaction, Product
 
 #API สำหรับจัดการคลังสินค้า
 class WarehouseSerializer(serializers.ModelSerializer):
@@ -26,3 +26,9 @@ class StockmovementSerializer(serializers.Serializer):
     quantity = serializers.IntegerField(min_value=1, required=True)
     transaction_type = serializers.ChoiceField(choices=StockTransaction.TransactionType.choices)
     reference_document = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = '__all__'
+        
