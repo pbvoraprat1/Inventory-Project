@@ -21,8 +21,14 @@ class StockTransactionSerializer(serializers.ModelSerializer):
 
 #API เอาไว้สำหรับตรวจ json
 class StockmovementSerializer(serializers.Serializer):
-    product_id = serializers.UUIDField(required=True)
-    warehouse_id = serializers.IntegerField(required=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+    queryset=Product.objects.all(), 
+    required=True
+)
+    warehouse_id = serializers.PrimaryKeyRelatedField(
+    queryset=Warehouse.objects.all(), 
+    required=True
+)
     quantity = serializers.IntegerField(min_value=1, required=True)
     transaction_type = serializers.ChoiceField(choices=StockTransaction.TransactionType.choices)
     reference_document = serializers.CharField(max_length=255, required=False, allow_blank=True)

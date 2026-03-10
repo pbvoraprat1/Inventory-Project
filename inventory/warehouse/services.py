@@ -5,8 +5,6 @@ from warehouse.models import Product, Warehouse, StockBalance, StockTransaction
 
 
 def perform_stock_transaction(product, warehouse, quantity, transaction_type, user, reference_document=""):
-    if quantity <= 0:
-        raise ValidationError("จำนวนสินค้าต้องมากกว่า 0 !")
     with transaction.atomic():
         balance_obj,created = StockBalance.objects.select_for_update().get_or_create(
             product=product, 
@@ -15,12 +13,18 @@ def perform_stock_transaction(product, warehouse, quantity, transaction_type, us
         )
         balance_before = balance_obj.quantity
         if transaction_type == StockTransaction.TransactionType.IN:
+            if quantity <= 0:
+                raise ValidationError("จำนวนสินค้ารับเข้าต้องมากกว่า 0 !")
             balance_after = balance_before + quantity
         elif transaction_type == StockTransaction.TransactionType.OUT:
+            if quantity <= 0:
+                raise ValidationError("จำนวนสินค้าเบิกต้องมากกว่า 0 !")
             balance_after = balance_before - quantity
             if balance_after < 0:
                 raise ValidationError(f"ยอดคงเหลือไม่เพียงพอ! (คงเหลือ: {balance_before}, ต้องการเบิก: {quantity})")
         elif transaction_type == StockTransaction.TransactionType.ADJ:
+            if quantity < 0:
+                raise ValidationError("จำนวนสินค้าต้องมากกว่า 0 !")
             balance_after = quantity
             quantity = abs(balance_after - balance_before)
         balance_obj.quantity = balance_after

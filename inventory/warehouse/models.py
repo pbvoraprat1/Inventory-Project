@@ -18,6 +18,7 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     base_price = models.DecimalField(max_digits=10, decimal_places=2)
     reorder_level = models.IntegerField(default=10)
+    is_auto_reorder = models.BooleanField(default=False) #สวิตช์ให้ AI เข้ามาจัดการ(กำลังพัฒนา)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

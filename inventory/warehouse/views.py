@@ -9,6 +9,7 @@ from .serializers import StockBalanceSerializer, StockmovementSerializer, Produc
 from .models import Product, StockBalance, Warehouse, StockTransaction
 from rest_framework.permissions import IsAuthenticated
 
+#การเคลื่อนไหวของสินค้าในคลัง เช่น รับสินค้าเข้าคลัง, เบิกสินค้า, ปรับยอดคงเหลือ
 class StockMovementAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -18,8 +19,8 @@ class StockMovementAPIView(APIView):
         data = serializer.validated_data
         try:
             transaction = perform_stock_transaction(
-                product=Product.objects.get(id=data['product_id']),       
-                warehouse=Warehouse.objects.get(id=data['warehouse_id']),
+                product=data['product_id'],       
+                warehouse=data['warehouse_id'],
                 quantity=data['quantity'],
                 transaction_type=data['transaction_type'],
                 user=request.user,
@@ -34,7 +35,8 @@ class StockMovementAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": f"สาเหตุที่พัง: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
+#รายการสินค้าทั้งหมดที่มีอยู่ในระบบ(เฉพาะสินค้าที่ is_active = True)    
 class ProductListAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
@@ -42,6 +44,7 @@ class ProductListAPIView(APIView):
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+#รายละเอียดสินค้าและแก้ไขข้อมูลสินค้า(เช่น ชื่อ, หมวดหมู่, ราคาต้นทุน) และลบสินค้า(ทำให้ is_active = False)
 class ProductDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def put(self, request, product_id):
@@ -72,8 +75,9 @@ class ProductDetailAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Product.DoesNotExist:
             return Response({"error": "ไม่พบสินค้า"}, status=status.HTTP_404_NOT_FOUND)
-        
-class StockbalanceAPIView(APIView):
+
+#ยอดคงเหลือสินค้าในคลังที่ระบุ      
+class StockBalanceAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, product_id, warehouse_id):
         try:
@@ -82,4 +86,18 @@ class StockbalanceAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except StockBalance.DoesNotExist:
             return Response({"error": "ไม่พบยอดคงเหลือสำหรับสินค้านี้ในคลังนี้"}, status=status.HTTP_404_NOT_FOUND)
-           
+
+#ยอดคงเหลือสินค้าในคลังทั้งหมดในคลังที่ระบุ       
+class StockBalanceListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, warehouse_id):
+        try:
+            warehouse = Warehouse.objects.get(id=warehouse_id)
+        except Warehouse.DoesNotExist:
+            return Response({"error": "ไม่มีคลังสินค้านี้"}, status=status.HTTP_404_NOT_FOUND)
+        stock_balances = StockBalance.objects.filter(warehouse_id=warehouse_id)
+        if not stock_balances.exists():
+            return Response({"error": "ไม่พบยอดคงเหลือสำหรับคลังนี้"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = StockBalanceSerializer(stock_balances, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+       

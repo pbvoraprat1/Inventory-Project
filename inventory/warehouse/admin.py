@@ -3,19 +3,19 @@ from .models import Category, Product, Warehouse, StockBalance, StockTransaction
 # Register your models here.
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description')
+    list_display = ('id', 'name', 'description')
     search_fields = ('name',)
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('sku', 'name', 'category', 'base_price')
+    list_display = ('id', 'sku', 'name', 'category', 'base_price')
     search_fields = ('sku', 'name')
     list_filter = ('category','is_active')
 
 @admin.register(Warehouse)
 class WarehouseAdmin(admin.ModelAdmin):
-    list_display = ('code','name', 'location', )
-    search_fields = ('code','name',)
+    list_display = ('id', 'code', 'name', 'location')
+    search_fields = ('code', 'name')
 
 @admin.register(StockBalance)
 class StockBalanceAdmin(admin.ModelAdmin):
