@@ -1,11 +1,11 @@
 from itertools import product
-
+from django.db.models import F
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ValidationError
 from .services import perform_stock_transaction
-from .serializers import StockBalanceSerializer, StockmovementSerializer, ProductSerializer
+from .serializers import StockBalanceSerializer, StockTransactionSerializer, StockmovementSerializer, ProductSerializer
 from .models import Product, StockBalance, Warehouse, StockTransaction
 from rest_framework.permissions import IsAuthenticated
 
@@ -101,3 +101,29 @@ class StockBalanceListAPIView(APIView):
         serializer = StockBalanceSerializer(stock_balances, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
        
+#แจ้งเตือนเมื่อยอดคงเหลือ == reorder_level และแสดงรายการเคลื่อนไหวของสินค้าทั้งหมดในคลังที่ระบุ
+class LowStockAlertAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, warehouse_id):
+        try:
+            warehouse = Warehouse.objects.get(id=warehouse_id)
+        except Warehouse.DoesNotExist:
+            return Response({"error": "ไม่พบคลังสินค้า"}, status=status.HTTP_404_NOT_FOUND)
+        lowStockBalance = StockBalance.objects.filter(warehouse_id=warehouse_id, quantity__lte=F('product__reorder_level'))
+        if not lowStockBalance.exists():
+            return Response({"message": "ไม่มีสินค้าที่มีปริมาณต่ำกว่าระดับสั่งซื้อใหม่"}, status=status.HTTP_200_OK)
+        out_of_stock = lowStockBalance.filter(quantity=0)
+        near_out_of_stock = lowStockBalance.filter(quantity__gt=0)
+        recent_transactions = StockTransaction.objects.filter(warehouse_id=warehouse_id).order_by('-timestamp')[:10]  # แสดงรายการเคลื่อนไหวล่าสุด 10 รายการ
+        transactions_data = StockTransactionSerializer(recent_transactions, many=True).data
+        low_stock_data = StockBalanceSerializer(lowStockBalance, many=True).data
+        return Response({
+            "warehouse_name": warehouse.name,
+            "summary": {
+                "total_low_stock": lowStockBalance.count(),
+                "out_of_stock": out_of_stock.count(),
+                "near_out_of_stock": near_out_of_stock.count(),
+            },
+            "low_stock_products": low_stock_data,
+            "recent_transactions": transactions_data,
+        },  status=status.HTTP_200_OK)
